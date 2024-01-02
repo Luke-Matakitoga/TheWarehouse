@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
+using Microsoft.EntityFrameworkCore;
+using TheWarehouse.Data;
 
 namespace TheWarehouse
 {
@@ -12,6 +14,10 @@ namespace TheWarehouse
             // Add services to the container.
             builder.Services.AddRazorPages();
             builder.Services.AddServerSideBlazor();
+            builder.Services.AddDbContext<WarehouseDbContext>(options =>
+            {
+                options.UseSqlServer("Data Source=(localDb)\\MSSQLLocalDb;Initial Catalog=WarehouseDb");
+            });
 
             var app = builder.Build();
 

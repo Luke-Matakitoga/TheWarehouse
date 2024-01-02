@@ -1,0 +1,29 @@
+﻿@page "/suppliers"
+@using TheWarehouse.Data.Models
+@using TheWarehouse.Data
+@inject WarehouseDbContext Context
+<h3>Suppliers</h3>
+
+<table class="table">
+    <thead>
+    <th>Supplier Name</th>
+    </thead>
+
+    <tbody>
+        @foreach (Supplier supplier in Suppliers)
+        {
+            <tr>
+                <td>@supplier.Name</td>
+            </tr>
+        }
+    </tbody>
+</table>
+@code {
+    List<Supplier> Suppliers = new();
+
+    protected override void OnInitialized()
+    {
+        Suppliers = Context.Suppliers.ToList<Supplier>();
+    }
+
+}
