@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TheWarehouse.Data;
 
@@ -11,9 +12,11 @@ using TheWarehouse.Data;
 namespace TheWarehouse.Migrations
 {
     [DbContext(typeof(WarehouseDbContext))]
-    partial class WarehouseDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240103160538_UserAuthsUpdate")]
+    partial class UserAuthsUpdate
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -131,7 +134,8 @@ namespace TheWarehouse.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("UserId")
+                        .IsUnique();
 
                     b.ToTable("UserAuths");
                 });
@@ -148,8 +152,8 @@ namespace TheWarehouse.Migrations
             modelBuilder.Entity("TheWarehouse.Data.Models.UserAuth", b =>
                 {
                     b.HasOne("TheWarehouse.Data.Models.User", null)
-                        .WithMany("Auth")
-                        .HasForeignKey("UserId")
+                        .WithOne("Auth")
+                        .HasForeignKey("TheWarehouse.Data.Models.UserAuth", "UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

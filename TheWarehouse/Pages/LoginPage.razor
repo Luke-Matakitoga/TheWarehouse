@@ -1,0 +1,46 @@
+﻿@layout EmptyLayout
+@page "/login"
+@using Microsoft.EntityFrameworkCore
+@using TheWarehouse.Data
+@using TheWarehouse.Data.Models
+@using TheWarehouse.Data.Repositories
+@inject IJSRuntime JSInterop
+@inject IDbContextFactory<WarehouseDbContext> ContextFactory
+
+<div style="text-align:center;padding-top:250px;">
+    <div>Email:</div>
+    <input type="text" @bind="EmailInput"/><br />
+    <div>Password:</div>
+    <input type="password" @bind="PasswordInput"/><br />
+    <input type="submit" @onclick="TryLogin"/>
+</div>
+
+<h3>@LoginResult</h3>
+@code {
+    public string? EmailInput { get; set; }
+    public string? PasswordInput { get; set; }
+
+    public string? LoginResult { get; set; }
+
+    WarehouseDbContext Context => ContextFactory.CreateDbContext();
+
+    protected async void TryLogin()
+    {
+        UserRepository repo = new(Context);
+        switch (repo.Login(EmailInput, PasswordInput))
+        {
+            case 1:
+                UserAuthRepository UAuthRepo = new(Context);
+                UserAuth AuthInfo = UAuthRepo.CreateToken(repo.GetUserId(EmailInput));
+                LoginResult = AuthInfo.AuthToken;
+                await JSInterop.InvokeVoidAsync("WriteCookie.WriteCookie", "UAuthToken", AuthInfo.AuthToken, AuthInfo.Expiry);
+                break;
+            case -1:
+                await JSInterop.InvokeVoidAsync("alert", "Logged failed: No user exists with this email");
+                break;
+            default:
+                await JSInterop.InvokeVoidAsync("alert", "Logged failed: Incorrect password");
+                break;
+        }
+    }
+}

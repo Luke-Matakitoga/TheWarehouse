@@ -1,6 +1,8 @@
-﻿@using TheWarehouse.Data
+﻿@using Microsoft.EntityFrameworkCore
+@using TheWarehouse.Data
 @using TheWarehouse.Data.Models
-@inject WarehouseDbContext Context
+@using TheWarehouse.Data.Repositories
+@inject IDbContextFactory<WarehouseDbContext> ContextFactory
 @inject IJSRuntime JSInterop
 <div class="modal" tabindex="-1" role="dialog" id="AddEdit">
     <div class="modal-dialog" role="document">
@@ -54,15 +56,20 @@
     public string? City { get; set; }
     public string? Postcode { get; set; }
 
-    protected override void OnParametersSet()
+    WarehouseDbContext Context => ContextFactory.CreateDbContext();
+
+    protected async override void OnParametersSet()
     {
-        if (Context.Suppliers.Where(s => s.Id == SupplierToEditId).ToArray().Count() != 0)
+        SupplierRepository repo = new(Context);
+        if (SupplierToEditId != null)
         {
-            SupplierName = Context.Suppliers.Where(s => s.Id == SupplierToEditId).ToArray()[0].Name;
-            AddressLine1 = Context.Suppliers.Where(s => s.Id == SupplierToEditId).ToArray()[0].AddressLine1;
-            AddressLine2 = Context.Suppliers.Where(s => s.Id == SupplierToEditId).ToArray()[0].AddressLine2;
-            City = Context.Suppliers.Where(s => s.Id == SupplierToEditId).ToArray()[0].City;
-            Postcode = Context.Suppliers.Where(s => s.Id == SupplierToEditId).ToArray()[0].Postcode;
+            Supplier supplier = await Context.Suppliers.FindAsync(SupplierToEditId);
+            //Supplier supplier = await repo.GetSupplierById(SupplierToEditId);
+            SupplierName = supplier.Name;
+            AddressLine1 = supplier.AddressLine1;
+            AddressLine2 = supplier.AddressLine2;
+            City = supplier.City;
+            Postcode = supplier.Postcode;
 
         }
         else
@@ -73,6 +80,8 @@
             City = "";
             Postcode = "";
         }
+
+        StateHasChanged();
     }
 
 
@@ -82,33 +91,38 @@
     }
     private async Task SaveSupplier(){
         Supplier supplier;
-        if (Context.Suppliers.Where(s=>s.Id==SupplierToEditId).ToArray().Count() != 0)
+        SupplierRepository repo = new(Context);
+        if (await repo.GetSupplierById(SupplierToEditId) != null)
         {
-            supplier = Context.Suppliers.Where(s => s.Id == SupplierToEditId).ToArray()[0];
+            supplier = await repo.GetSupplierById(SupplierToEditId);
             supplier.Name = SupplierName;
             supplier.AddressLine1 = AddressLine1;
             supplier.AddressLine2 = AddressLine2;
             supplier.City = City;
             supplier.Postcode = Postcode;
-            Context.Suppliers.Update(supplier);
+            repo.UpdateSupplier(supplier);
         }
-        else
-        {
+        else{
             supplier = new()
-                {
-                    Name = SupplierName,
-                    AddressLine1 = AddressLine1,
-                    AddressLine2 = AddressLine2,
-                    City = City,
-                    Postcode = Postcode
-                };
+            {
+                Name = SupplierName,
+                AddressLine1 = AddressLine1,
+                AddressLine2 = AddressLine2,
+                City = City,
+                Postcode = Postcode
+            };
 
-            await Context.Suppliers.AddAsync(supplier);
+            await repo.InsertSupplier(supplier);
         }
 
-        await Context.SaveChangesAsync();
+        await repo.Save();
+        LogRepository logRepo = new(Context);
+        logRepo.Log("Added Supplier - \"" + supplier.Name + "\"");
+        await logRepo.Save();
+        Context.Dispose();
         await JSInterop.InvokeVoidAsync("CloseModal");
         PrepareToClose();
         await OnClose.InvokeAsync();
     }
+
 }

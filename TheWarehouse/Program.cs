@@ -14,7 +14,7 @@ namespace TheWarehouse
             // Add services to the container.
             builder.Services.AddRazorPages();
             builder.Services.AddServerSideBlazor();
-            builder.Services.AddDbContext<WarehouseDbContext>(options =>
+            builder.Services.AddDbContextFactory<WarehouseDbContext>(options =>
             {
                 options.UseSqlServer("Data Source=(localDb)\\MSSQLLocalDb;Initial Catalog=WarehouseDb");
             });

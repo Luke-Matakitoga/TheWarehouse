@@ -1,0 +1,47 @@
+﻿@page "/logs"
+@using Microsoft.EntityFrameworkCore
+@using TheWarehouse.Data.Models
+@using TheWarehouse.Data
+@using TheWarehouse.Data.Repositories
+@inject IDbContextFactory<WarehouseDbContext> ContextFactory
+
+<div class="sidebar">
+    <div class="sidebar-left"><h3>Logs</h3></div>
+</div>
+
+<table class="table table-striped data-table">
+    <thead class="thead-dark">
+        <th width="15%">Time</th>
+        <th>Message</th>
+        <th></th>
+    </thead>
+
+    <tbody>
+        @if (Logs != null)
+            @foreach (Log log in Logs)
+            {
+                <tr>
+                    <td>@log.TimeStamp</td>
+                    <td style="cursor:auto;">@log.Message</td>
+                    <td width="5%"><button @onclick="@(e=>DeleteLog(@log.Id))">Delete</button></td>
+                </tr>
+            }
+    </tbody>
+</table>
+@code {
+    IEnumerable<Log> Logs;
+    WarehouseDbContext Context => ContextFactory.CreateDbContext();
+
+
+    protected override void OnInitialized()
+    {
+        LogRepository repo = new(Context);
+        Logs = repo.GetAllLogs(15);
+    }
+
+    protected void DeleteLog(int? id)
+    {
+        LogRepository repo = new(Context);
+        repo.DeleteLog(id);
+    }
+}

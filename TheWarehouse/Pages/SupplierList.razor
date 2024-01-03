@@ -1,7 +1,9 @@
 ﻿@page "/suppliers"
+@using Microsoft.EntityFrameworkCore
 @using TheWarehouse.Data.Models
 @using TheWarehouse.Data
-@inject WarehouseDbContext Context
+@using TheWarehouse.Data.Repositories
+@inject IDbContextFactory<WarehouseDbContext> ContextFactory
 
 <div class="sidebar">
     <div class="sidebar-left"><h3>Suppliers</h3></div>
@@ -19,6 +21,7 @@
     </thead>
 
     <tbody>
+        @if(Suppliers!=null)
         @foreach (Supplier supplier in Suppliers)
         {
             <tr>
@@ -36,8 +39,9 @@
     </tbody>
 </table>
 @code {
-    List<Supplier> Suppliers = new();
+    IEnumerable<Supplier>? Suppliers;
     public int? SupplierToEditId{ get; set; }
+    WarehouseDbContext Context => ContextFactory.CreateDbContext();
 
     protected override void OnInitialized()
     {
@@ -49,11 +53,12 @@
         GrabList();
     }
 
-    protected void DeleteSupplier(int Id)
+    protected async void DeleteSupplier(int Id)
     {
-        Supplier supplier = Context.Suppliers.Where(s=>s.Id==Id).ToArray()[0];
-        Context.Suppliers.Remove(supplier);
-        Context.SaveChanges();
+        SupplierRepository repo = new(Context);
+        Supplier supplier = await repo.GetSupplierById(Id);
+        repo.DeleteSupplier(supplier.Id);
+        await repo.Save();
         RefreshTable();
     }
 
@@ -62,8 +67,11 @@
         SupplierToEditId = Id;
     }
 
-    protected void GrabList()
+    protected async void GrabList()
     {
-        Suppliers = Context.Suppliers.ToList<Supplier>();
+        SupplierRepository repo = new(Context);
+        Suppliers = await repo.GetSuppliers();
+        StateHasChanged();
     }
+
 }
