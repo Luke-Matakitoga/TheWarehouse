@@ -2,28 +2,68 @@
 @using TheWarehouse.Data.Models
 @using TheWarehouse.Data
 @inject WarehouseDbContext Context
-<h3>Suppliers</h3>
 
-<table class="table">
-    <thead>
-    <th>Supplier Name</th>
+<div class="sidebar">
+    <div class="sidebar-left"><h3>Suppliers</h3></div>
+    <div class="sidebar-right"><button data-target="#AddEdit" data-toggle="modal" @onclick="@(e=>SupplierToEditId=null)">Add New</button></div>
+</div>
+
+<AddEditSupplier OnClose="RefreshTable" SupplierToEditId="SupplierToEditId"/>
+
+<table class="table table-striped data-table">
+    <thead class="thead-dark">
+        <th width="5%">ID</th>
+        <th width="20%">Supplier Name</th>
+        <th>Address</th>
+        <th/>
     </thead>
 
     <tbody>
         @foreach (Supplier supplier in Suppliers)
         {
             <tr>
-                <td>@supplier.Name</td>
+                <td data-target="#AddEdit" data-toggle="modal" @onclick="@(e=>SetSupplierToEdit(@supplier.Id))">@supplier.Id</td>
+                <td data-target="#AddEdit" data-toggle="modal" @onclick="@(e=>SetSupplierToEdit(@supplier.Id))">@supplier.Name</td>
+                <td data-target="#AddEdit" data-toggle="modal" @onclick="@(e=>SetSupplierToEdit(@supplier.Id))">
+                    <div>@supplier.AddressLine1</div>
+                    <div>@supplier.AddressLine2</div>
+                    <div>@supplier.City</div>
+                    <div>@supplier.Postcode</div>
+                </td>
+                <td width="5%"><button @onclick="@(e=>DeleteSupplier(@supplier.Id))">Delete</button></td>
             </tr>
         }
     </tbody>
 </table>
 @code {
     List<Supplier> Suppliers = new();
+    public int? SupplierToEditId{ get; set; }
 
     protected override void OnInitialized()
     {
-        Suppliers = Context.Suppliers.ToList<Supplier>();
+        RefreshTable();
     }
 
+    protected void RefreshTable()
+    {
+        GrabList();
+    }
+
+    protected void DeleteSupplier(int Id)
+    {
+        Supplier supplier = Context.Suppliers.Where(s=>s.Id==Id).ToArray()[0];
+        Context.Suppliers.Remove(supplier);
+        Context.SaveChanges();
+        RefreshTable();
+    }
+
+    protected void SetSupplierToEdit(int Id)
+    {
+        SupplierToEditId = Id;
+    }
+
+    protected void GrabList()
+    {
+        Suppliers = Context.Suppliers.ToList<Supplier>();
+    }
 }

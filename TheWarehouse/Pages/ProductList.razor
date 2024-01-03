@@ -2,10 +2,17 @@
 @using TheWarehouse.Data
 @using TheWarehouse.Data.Models
 @inject WarehouseDbContext Context
-<h3>Products</h3>
 
-<table class="table">
-    <thead>
+<div class="sidebar">
+    <div class="sidebar-left"><h3>Products</h3></div>
+    <div class="sidebar-right"><button data-target="#AddEdit" data-toggle="modal" @onclick="@(e=>ProductToEditId=null)">Add New</button></div>
+</div>
+
+<AddEditProduct OnClose="RefreshTable" ProductToEditId="ProductToEditId" />
+
+
+<table class="table table-striped">
+    <thead class="thead-dark">
         <th>Product Name</th>
         <th>Supplier Name</th>
     </thead>
@@ -16,6 +23,7 @@
             <tr>
                 <td>@product.Name</td>
                 <td>@product.Supplier.Name</td>
+                <td width="5%"><button @onclick="@(e=>DeleteProduct(@product.Id))">Delete</button></td>
             </tr>
         }
     </tbody>
@@ -23,9 +31,33 @@
 @code {
     List<Product> Products = new();
 
+    public int? ProductToEditId { get; set; }
+
     protected override void OnInitialized()
+    {
+        RefreshTable();
+    }
+
+    protected void RefreshTable()
+    {
+        GrabList();
+    }
+
+    protected void DeleteProduct(int Id)
+    {
+        Product product = Context.Products.Where(p => p.Id == Id).ToArray()[0];
+        Context.Products.Remove(product);
+        Context.SaveChanges();
+        RefreshTable();
+    }
+
+    protected void SetProductToEdit(int Id)
+    {
+        ProductToEditId = Id;
+    }
+
+    protected void GrabList()
     {
         Products = Context.Products.ToList<Product>();
     }
-
 }

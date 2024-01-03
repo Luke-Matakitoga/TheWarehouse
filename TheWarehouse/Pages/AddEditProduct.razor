@@ -1,0 +1,93 @@
+﻿@using TheWarehouse.Data
+@using TheWarehouse.Data.Models
+@inject WarehouseDbContext Context
+@inject IJSRuntime JSInterop
+<div class="modal" tabindex="-1" role="dialog" id="AddEdit">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add/Edit Product</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="input-field">
+                    <label>Product Name</label><br />
+                    <input type="text" @bind="ProductName" />
+                </div>
+
+                <div class="input-field">
+                    <label>Supplier</label><br />
+                    <select @bind="SupplierId">
+                        @foreach(Supplier supplier in Context.Suppliers)
+                        {
+                            <option value="@supplier.Id">@supplier.Name</option>
+                        }
+                    </select>
+                </div>
+              
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" @onclick="SaveProduct">Save and Close</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal" @onclick="PrepareToClose">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+    [Parameter]
+    public int? ProductToEditId { get; set; } = null;
+
+    public string? ProductName { get; set; }
+    public int? SupplierId { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        if (Context.Suppliers.Where(s => s.Id == ProductToEditId).ToArray().Count() != 0)
+        {
+            ProductName = Context.Products.Where(s => s.Id == ProductToEditId).ToArray()[0].Name;
+            SupplierId = Context.Products.Where(s => s.Id == ProductToEditId).ToArray()[0].SupplierId;
+        }
+        else
+        {
+            ProductName = "";
+            SupplierId = null;
+        }
+    }
+
+
+    private void PrepareToClose()
+    {
+        ProductToEditId = null;
+    }
+    private async Task SaveProduct()
+    {
+        Product product;
+        if (Context.Products.Where(s => s.Id == ProductToEditId).ToArray().Count() != 0)
+        {
+            product = Context.Products.Where(p => p.Id == ProductToEditId).ToArray()[0];
+            product.Name = ProductName;
+            product.SupplierId = SupplierId;
+            Context.Products.Update(product);
+        }
+        else
+        {
+            product = new()
+                {
+                    Name = ProductName,
+                    SupplierId = SupplierId,
+                };
+
+            await Context.Products.AddAsync(product);
+        }
+
+        await Context.SaveChangesAsync();
+        await JSInterop.InvokeVoidAsync("CloseModal");
+        PrepareToClose();
+        await OnClose.InvokeAsync();
+    }
+}

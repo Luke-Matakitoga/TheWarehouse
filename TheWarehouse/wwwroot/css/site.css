@@ -13,6 +13,15 @@ a, .btn-link {
     color: #0071c1;
 }
 
+.input-field{
+    text-align:center;
+}
+
+tbody>tr{
+    cursor:pointer;
+}
+
+
 .btn-primary {
     color: #fff;
     background-color: #1b6ec2;
@@ -37,6 +46,14 @@ a, .btn-link {
 
 .validation-message {
     color: red;
+}
+
+.sidebar-right{
+    float:right;
+}
+
+.sidebar-left{
+    float:left;
 }
 
 #blazor-error-ui {
