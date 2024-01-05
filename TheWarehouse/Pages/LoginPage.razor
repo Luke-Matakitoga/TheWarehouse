@@ -14,8 +14,6 @@
     <input type="password" @bind="PasswordInput"/><br />
     <input type="submit" @onclick="TryLogin"/>
 </div>
-
-<h3>@LoginResult</h3>
 @code {
     public string? EmailInput { get; set; }
     public string? PasswordInput { get; set; }
@@ -32,8 +30,10 @@
             case 1:
                 UserAuthRepository UAuthRepo = new(Context);
                 UserAuth AuthInfo = UAuthRepo.CreateToken(repo.GetUserId(EmailInput));
-                LoginResult = AuthInfo.AuthToken;
                 await JSInterop.InvokeVoidAsync("WriteCookie.WriteCookie", "UAuthToken", AuthInfo.AuthToken, AuthInfo.Expiry);
+                LogRepository LogRepo = new(Context);
+                LogRepo.Log("User logged in: "+ EmailInput);
+                await LogRepo.Save();
                 break;
             case -1:
                 await JSInterop.InvokeVoidAsync("alert", "Logged failed: No user exists with this email");

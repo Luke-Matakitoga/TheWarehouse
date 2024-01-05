@@ -1,0 +1,93 @@
+﻿@using Microsoft.EntityFrameworkCore
+@using TheWarehouse.Data
+@using TheWarehouse.Data.Models
+@using TheWarehouse.Data.Repositories
+@inject IDbContextFactory<WarehouseDbContext> ContextFactory
+@inject IJSRuntime JSInterop
+<div class="modal" tabindex="-1" role="dialog" id="AddEdit">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add/Edit User</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="input-field">
+                    <label>Email</label><br />
+                    <input type="text" @bind="UserEmail" />
+                </div>
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" @onclick="SaveUser">Save and Close</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal" @onclick="PrepareToClose">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+    [Parameter]
+    public int? UserToEditId { get; set; } = null;
+
+    public string? UserEmail { get; set; }
+
+    WarehouseDbContext Context => ContextFactory.CreateDbContext();
+
+    protected async override void OnParametersSet()
+    {
+        UserRepository repo = new(Context);
+        if (UserToEditId != null)
+        {
+            User user = await Context.Users.FindAsync(UserToEditId);
+            //Supplier supplier = await repo.GetSupplierById(SupplierToEditId);
+            UserEmail = user.Email;
+        }
+        else
+        {
+            UserEmail = "";
+        }
+
+        StateHasChanged();
+    }
+
+
+    private void PrepareToClose()
+    {
+        UserToEditId = null;
+    }
+    private async Task SaveUser()
+    {
+        User user;
+        UserRepository repo = new(Context);
+        if (await repo.GetUserById(UserToEditId) != null)
+        {
+            user = await repo.GetUserById(UserToEditId);
+            user.Email = UserEmail;
+            repo.UpdateUser(user);
+        }
+        else
+        {
+            user = new()
+                {
+                    Email = UserEmail,
+                };
+
+            repo.InsertUser(user);
+        }
+
+        repo.Save();
+        LogRepository logRepo = new(Context);
+        logRepo.Log("Added User - \"" + user.Email + "\"");
+        await logRepo.Save();
+        Context.Dispose();
+        await JSInterop.InvokeVoidAsync("CloseModal");
+        PrepareToClose();
+        await OnClose.InvokeAsync();
+    }
+
+}

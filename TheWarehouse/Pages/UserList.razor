@@ -1,0 +1,70 @@
+﻿@page "/users"
+@using Microsoft.EntityFrameworkCore
+@using TheWarehouse.Data.Models
+@using TheWarehouse.Data
+@using TheWarehouse.Data.Repositories
+@inject IDbContextFactory<WarehouseDbContext> ContextFactory
+
+<div class="sidebar">
+    <div class="sidebar-left"><h3>Users</h3></div>
+    <div class="sidebar-right"><button data-target="#AddEdit" data-toggle="modal" @onclick="@(e=>UserToEditId=null)">Add New</button></div>
+</div>
+
+<AddEditUser OnClose="RefreshTable" UserToEditId="UserToEditId" />
+
+<table class="table table-striped data-table">
+    <thead class="thead-dark">
+    <th width="5%">ID</th>
+    <th width="20%">Email</th>
+    <th>Last Login</th>
+    <th />
+    </thead>
+
+    <tbody>
+        @if (Users != null)
+            @foreach (User user in Users)
+            {
+                <tr>
+                    <td data-target="#AddEdit" data-toggle="modal" @onclick="@(e=>SetUserToEdit(@user.Id))">@user.Id</td>
+                    <td data-target="#AddEdit" data-toggle="modal" @onclick="@(e=>SetUserToEdit(@user.Id))">@user.Email</td>
+                </tr>
+            }
+    </tbody>
+</table>
+@code {
+    IEnumerable<User>? Users;
+    public int? UserToEditId { get; set; }
+    WarehouseDbContext Context => ContextFactory.CreateDbContext();
+
+    protected override void OnInitialized()
+    {
+        RefreshTable();
+    }
+
+    protected void RefreshTable()
+    {
+        GrabList();
+    }
+
+    protected async void DeleteUser(int Id)
+    {
+        UserRepository repo = new(Context);
+        User user = await repo.GetUserById(Id);
+        repo.DeleteUser(user.Id);
+        repo.Save();
+        RefreshTable();
+    }
+
+    protected void SetUserToEdit(int Id)
+    {
+        UserToEditId = Id;
+    }
+
+    protected async void GrabList()
+    {
+        UserRepository repo = new(Context);
+        Users = await repo.GetUsers();
+        StateHasChanged();
+    }
+
+}

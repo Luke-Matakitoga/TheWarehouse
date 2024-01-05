@@ -39,9 +39,10 @@
         Logs = repo.GetAllLogs(15);
     }
 
-    protected void DeleteLog(int? id)
+    protected async void DeleteLog(int? id)
     {
         LogRepository repo = new(Context);
         repo.DeleteLog(id);
+        await repo.Save();
     }
 }
